@@ -1,6 +1,6 @@
 # Event Ticketing & Booking System
 
-**Mata Kuliah:** Konstruksi Perangkat Lunak (EF234402)  
+**Mata Kuliah:** Konstruksi Perangkat Lunak
 **Institut:** Institut Teknologi Sepuluh Nopember  
 **Tim:** Tim 13
 
@@ -151,11 +151,11 @@ event_ticketing/
 
 | Week      | Status     | Keterangan                                     |
 | --------- | ---------- | ---------------------------------------------- |
-| Week 8    | ✅ Selesai | Project structure, domain layer, unit tests    |
-| Week 9-10 | 🔜         | Application layer: Commands, Queries, Handlers |
-| Week 11   | 🔜         | Infrastructure layer: PostgreSQL               |
-| Week 12   | 🔜         | Presentation layer: finalisasi REST API        |
-| Week 13   | 🔜         | Integrasi penuh dan demo akhir                 |
+| Week 8    | Done       | Project structure, domain layer, unit tests    |
+| Week 9-10 |            | Application layer: Commands, Queries, Handlers |
+| Week 11   |            | Infrastructure layer: PostgreSQL               |
+| Week 12   |            | Presentation layer: finalisasi REST API        |
+| Week 13   |            | Integrasi penuh dan demo akhir                 |
 
 ---
 
