@@ -1,169 +1,174 @@
 # Event Ticketing & Booking System
+## EF234402 – Konstruksi Perangkat Lunak | Week 8
 
-**Mata Kuliah:** Konstruksi Perangkat Lunak
-**Institut:** Institut Teknologi Sepuluh Nopember  
-**Tim:** Tim 13
-
-| Nama                       | NRP        | Kontribusi                                                    |
-| -------------------------- | ---------- | ------------------------------------------------------------- |
-| Ziyad Raziq Lahitidra Afey | 5053241042 | Domain layer, business rules, unit tests, REST API            |
-| Farrel Ahmad Lazuardi      | 5053241035 | Folder structure, repository interfaces, schemas, dokumentasi |
+> Implementasi menggunakan **Python + FastAPI** dengan **Clean Architecture** dan **Domain-Driven Design (DDD)**
 
 ---
 
-## Tentang Proyek
+## Progres Week 8
 
-Sistem pemesanan dan pengelolaan tiket event yang dibangun menggunakan **Python** dan **FastAPI**. Arsitektur mengikuti prinsip **Clean Architecture** dan **Domain-Driven Design (DDD)**, dengan pemisahan yang jelas antara business logic, use cases, infrastruktur, dan antarmuka API.
+Week 8 fokus pada:
+1. Struktur folder Clean Architecture
+2. Business rules awal dari user stories
+3. Draft domain model
+4. Ubiquitous Language Glossary
 
----
-
-## Teknologi
-
-- Python 3.12
-- FastAPI
-- PostgreSQL _(Week 12, saat ini menggunakan In-Memory)_
-- pytest
 
 ---
 
-## Struktur Proyek
+## Struktur Folder (Clean Architecture)
 
 ```
 event_ticketing/
 ├── src/
-│   ├── domain/                  # Business logic murni
+│   ├── domain/                        ← DOMAIN LAYER (Week 9-10)
 │   │   ├── aggregates/
-│   │   │   ├── event.py         # Aggregate: Event & TicketCategory
-│   │   │   ├── booking.py       # Aggregate: Booking & Ticket
-│   │   │   └── refund.py        # Aggregate: Refund
+│   │   │   ├── event.py               ← Aggregate: Event + TicketCategory
+│   │   │   ├── booking.py             ← Aggregate: Booking
+│   │   │   ├── ticket.py              ← Aggregate: Ticket
+│   │   │   └── refund.py              ← Aggregate: Refund
 │   │   ├── value_objects/
-│   │   │   └── money.py         # Value Object: Money
+│   │   │   └── money.py               ← Value Object: Money
 │   │   ├── events/
-│   │   │   └── domain_events.py # Semua domain events
-│   │   └── repositories/
-│   │       └── interfaces.py    # Repository interfaces (abstract)
-│   │
-│   ├── application/             # Use cases (Week 11)
-│   │   ├── commands/
-│   │   ├── queries/
-│   │   ├── handlers/
-│   │   └── interfaces/
-│   │
-│   ├── infrastructure/          # Detail teknis
+│   │   │   └── domain_events.py       ← 13 Domain Events
 │   │   ├── repositories/
-│   │   │   └── in_memory.py     # In-Memory repository (sementara)
-│   │   └── database/            # Koneksi PostgreSQL (Week 12)
+│   │   │   └── interfaces.py          ← Repository Interfaces (abstract)
+│   │   └── services/                  ← Domain Services (jika diperlukan)
 │   │
-│   ├── presentation/            # REST API
-│   │   ├── routers/
-│   │   │   ├── event_router.py
-│   │   │   ├── booking_router.py
-│   │   │   └── refund_router.py
-│   │   └── schemas/
-│   │       └── schemas.py
+│   ├── application/                   ← APPLICATION LAYER (Week 11)
+│   │   ├── commands/                  ← Command definitions
+│   │   ├── queries/                   ← Query definitions
+│   │   ├── handlers/                  ← Command & Query handlers
+│   │   ├── interfaces/                ← External service interfaces
+│   │   └── dtos/                      ← Data Transfer Objects
 │   │
-│   ├── dependencies.py          # Dependency injection
-│   └── main.py                  # Entry point aplikasi
+│   ├── infrastructure/                ← INFRASTRUCTURE LAYER (Week 12)
+│   │   ├── repositories/
+│   │   │   └── in_memory.py           ← Sementara In-Memory, nanti PostgreSQL
+│   │   ├── database/                  ← Konfigurasi PostgreSQL
+│   │   └── services/                  ← Implementasi external services
+│   │
+│   ├── presentation/                  ← PRESENTATION LAYER (Week 13)
+│   │   ├── routers/                   ← FastAPI REST API endpoints
+│   │   └── schemas/                   ← Pydantic request/response schemas
+│   │
+│   ├── dependencies.py                ← Dependency Injection Container
+│   └── main.py                        ← FastAPI entry point
 │
 └── tests/
     └── domain/
-        └── test_domain.py       # 31 unit tests
+        └── test_domain.py             ← Unit tests (Week 9-10)
 ```
 
 ---
 
-### dokumentasi API
+## Dependency Rule (Clean Architecture)
 
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+```
+Presentation → Application → Domain ← Infrastructure
+```
+
+- Setiap layer hanya boleh bergantung ke layer yang lebih dalam
+- Domain layer tidak boleh bergantung ke layer lain
+- Infrastructure mengimplementasikan interface yang didefinisikan di domain
 
 ---
 
-## Domain Model
+## Domain Model (Draft)
 
 ### Aggregates
 
-| Aggregate | Berisi                | Keterangan                               |
-| --------- | --------------------- | ---------------------------------------- |
-| Event     | Event, TicketCategory | Mengelola event dan kategori tiket       |
-| Booking   | Booking, Ticket       | Mengelola pemesanan dan penerbitan tiket |
-| Refund    | Refund                | Mengelola proses pengembalian uang       |
+| Aggregate Root | Child Entities | Value Objects |
+|----------------|---------------|---------------|
+| Event          | TicketCategory | Money (price) |
+| Booking        | —             | Money (total) |
+| Ticket         | —             | —             |
+| Refund         | —             | —             |
 
-### Value Objects
+### Status Lifecycle
 
-| Value Object | Keterangan                                                   |
-| ------------ | ------------------------------------------------------------ |
-| Money        | Representasi uang yang immutable, berisi amount dan currency |
+**Event:** Draft → Published → Cancelled / Completed
 
-### Domain Events
+**Booking:** PendingPayment → Paid → Refunded
+             PendingPayment → Expired
 
-| Event                  | Kapan Terjadi                            |
-| ---------------------- | ---------------------------------------- |
-| EventCreated           | Event baru dibuat                        |
-| EventPublished         | Event dipublish dan siap dijual          |
-| EventCancelled         | Event dibatalkan                         |
-| TicketCategoryCreated  | Ticket category ditambahkan ke event     |
-| TicketCategoryDisabled | Ticket category dinonaktifkan            |
-| TicketReserved         | Booking baru dibuat                      |
-| BookingPaid            | Booking berhasil dibayar                 |
-| BookingExpired         | Booking kadaluarsa karena tidak dibayar  |
-| TicketCheckedIn        | Tiket berhasil di-check in di venue      |
-| RefundRequested        | Customer mengajukan refund               |
-| RefundApproved         | Refund disetujui oleh organizer          |
-| RefundRejected         | Refund ditolak oleh organizer            |
-| RefundPaidOut          | Uang refund sudah ditransfer ke customer |
+**Ticket:** Active → CheckedIn / Cancelled
 
----
+**Refund:** Requested → Approved → PaidOut
+            Requested → Rejected
 
-## Business Rules yang Diimplementasikan
+### Business Rules (Initial)
 
-### Event
-
+**Event:**
 - End date tidak boleh lebih awal dari start date
 - Kapasitas maksimal harus lebih dari 0
 - Event hanya bisa dipublish jika ada minimal 1 ticket category aktif
-- Total quota semua ticket category tidak boleh melebihi kapasitas event
-- Event yang sudah Completed tidak bisa dibatalkan
+- Total quota ticket category tidak boleh melebihi kapasitas event
+- Event berstatus Cancelled tidak bisa dipublish
+- Event berstatus Completed tidak bisa dibatalkan
 
-### Booking
+**Ticket Category:**
+- Harga tidak boleh negatif
+- Quota harus lebih dari 0
+- Sales period harus berakhir sebelum atau saat event dimulai
 
-- Jumlah tiket yang dipesan harus lebih dari 0
-- Booking hanya bisa dibayar selama statusnya PendingPayment
-- Booking tidak bisa dibayar setelah payment deadline (15 menit)
-- Jumlah pembayaran harus sama persis dengan total harga
+**Booking:**
+- Quantity harus lebih dari 0
+- Tidak bisa memesan jika ticket category tidak aktif atau di luar sales period
+- Satu customer hanya boleh punya satu booking aktif per event
+- Payment deadline: 15 menit setelah booking dibuat
+- Tidak bisa dibayar setelah payment deadline
+- Jumlah pembayaran harus sama dengan total price
 - Booking yang sudah Paid tidak bisa di-expire
 
-### Ticket
-
-- Tiket hanya diterbitkan setelah booking dibayar
-- Tiket yang sudah check-in tidak bisa check-in lagi
-- Tiket yang dibatalkan tidak bisa check-in
-
-### Refund
-
-- Refund hanya bisa di-approve atau di-reject jika statusnya Requested
-- Penolakan refund wajib disertai alasan
-- Refund hanya bisa ditandai PaidOut jika statusnya Approved
+**Refund:**
+- Hanya bisa diminta untuk booking berstatus Paid
+- Tidak bisa diminta jika ada tiket yang sudah check-in
+- Penolakan refund harus disertai alasan
 
 ---
 
-## Progress Mingguan
+## Ubiquitous Language Glossary
 
-| Week      | Status     | Keterangan                                     |
-| --------- | ---------- | ---------------------------------------------- |
-| Week 8    | Done       | Project structure, domain layer, unit tests    |
-| Week 9-10 |            | Application layer: Commands, Queries, Handlers |
-| Week 11   |            | Infrastructure layer: PostgreSQL               |
-| Week 12   |            | Presentation layer: finalisasi REST API        |
-| Week 13   |            | Integrasi penuh dan demo akhir                 |
+| Term | Makna |
+|------|-------|
+| Event | Kegiatan yang diorganisir oleh Event Organizer |
+| Event Organizer | User yang membuat dan mengelola event |
+| Customer | User yang memesan dan membayar tiket |
+| Gate Officer | User yang validasi tiket saat check-in |
+| System Admin | User yang mengelola refund payout |
+| Ticket Category | Tipe tiket: Regular, VIP, Early Bird, dll |
+| Quota | Jumlah maksimal tiket per kategori |
+| Booking | Reservasi sementara sebelum pembayaran |
+| PendingPayment | Status booking yang belum dibayar |
+| Paid | Status booking yang sudah dibayar |
+| Expired | Status booking yang melewati payment deadline |
+| Refunded | Status booking yang uangnya dikembalikan |
+| Ticket | Bukti kepesertaan setelah booking Paid |
+| Ticket Code | Kode unik (contoh: TKT-AB12CD34) untuk check-in |
+| Check-in | Proses validasi tiket saat masuk venue |
+| Sales Period | Periode tiket bisa dibeli |
+| Payment Deadline | Batas waktu bayar (15 menit setelah booking) |
+| Money | Value Object: jumlah uang + currency |
+| Refund | Proses pengembalian uang ke customer |
+| Domain Event | Sesuatu yang sudah terjadi di domain (past tense) |
+| Aggregate | Cluster entity yang dimodifikasi sebagai satu unit |
+| Aggregate Root | Satu-satunya pintu masuk untuk memodifikasi aggregate |
+| Repository | Abstraksi penyimpanan data aggregate |
+| Value Object | Objek immutable, equality by value bukan identity |
 
 ---
 
-## Arsitektur
+## Rencana Implementasi
 
-```
-Presentation  →  Application  →  Domain  ←  Infrastructure
-(FastAPI)         (Use Cases)   (Logic)      (PostgreSQL)
-```
+| Week | Target |
+|------|--------|
+| Week 8  | (done) Struktur folder, business rules, domain model draft, glossary |
+| Week 9-10 | Domain layer: Aggregates, Value Objects, Domain Events, Repository Interfaces, Unit Tests |
+| Week 11 | Application layer: Commands, Queries, Handlers, Service Interfaces |
+| Week 12 | Infrastructure layer: PostgreSQL, Repository impl, External services |
+| Week 13 | Presentation layer: REST API Controllers, integrasi penuh |
 
-Setiap layer hanya boleh bergantung ke layer yang lebih dalam. Domain layer tidak bergantung ke siapapun.
+---
+
+
